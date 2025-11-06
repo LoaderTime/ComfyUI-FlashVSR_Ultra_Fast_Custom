@@ -192,7 +192,7 @@ def clean_vram():
     if torch.cuda.is_available():
         torch.cuda.empty_cache()
         torch.cuda.ipc_collect()
-    if torch.mps.is_available():
+    if torch.backends.mps.is_available():
         torch.mps.empty_cache()
 
 def get_device_list():
