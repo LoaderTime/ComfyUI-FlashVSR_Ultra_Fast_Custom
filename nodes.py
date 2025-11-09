@@ -6,6 +6,7 @@ import math
 import torch
 import folder_paths
 import comfy.utils
+import json
 
 import numpy as np
 import torch.nn.functional as F
@@ -16,6 +17,15 @@ from .src import ModelManager, FlashVSRFullPipeline, FlashVSRTinyPipeline, Flash
 from .src.models.TCDecoder import build_tcdecoder
 from .src.models.utils import clean_vram, get_device_list, Buffer_LQ4x_Proj, Causal_LQ4x_Proj
 from .src.models import wan_video_dit
+
+# 加载配置文件
+CONFIG_FILE = os.path.join(os.path.dirname(__file__), "config.json")
+if os.path.exists(CONFIG_FILE):
+    with open(CONFIG_FILE, "r", encoding="utf-8") as f:
+        config = json.load(f)
+    CUSTOM_MODEL_PATH = config.get("model_path", folder_paths.models_dir)
+else:
+    CUSTOM_MODEL_PATH = folder_paths.models_dir
 
 device_choices = get_device_list()
 
@@ -33,7 +43,7 @@ def log(message:str, message_type:str='normal'):
     print(f"{message}")
 
 def model_downlod(model_name="JunhaoZhuang/FlashVSR"):
-    model_dir = os.path.join(folder_paths.models_dir, model_name.split("/")[-1])
+    model_dir = os.path.join(CUSTOM_MODEL_PATH, model_name.split("/")[-1])
     if not os.path.exists(model_dir):
         log(f"Downloading model '{model_name}' from huggingface...", message_type='info')
         snapshot_download(repo_id=model_name, local_dir=model_dir, local_dir_use_symlinks=False, resume_download=True)
@@ -138,7 +148,7 @@ def create_feather_mask(size, overlap):
 
 def init_pipeline(model, mode, device, dtype, alt_vae="none"):
     model_downlod(model_name="JunhaoZhuang/"+model)
-    model_path = os.path.join(folder_paths.models_dir, model)
+    model_path = os.path.join(CUSTOM_MODEL_PATH, model)
     if not os.path.exists(model_path):
         raise RuntimeError(f'Model directory does not exist!\nPlease save all weights to "{model_path}"')
     ckpt_path = os.path.join(model_path, "diffusion_pytorch_model_streaming_dmd.safetensors")
